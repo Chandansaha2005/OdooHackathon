@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 
 export default function Header() {
   const { user, isAdmin, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dropOpen, setDropOpen] = useState(false);
@@ -32,8 +33,8 @@ export default function Header() {
     let active = true;
     async function fetchStatus() {
       try {
-        const { data: res } = await attendanceService.getTodayStatus();
-        const record = res?.record || res?.data?.record;
+        const res = await attendanceService.getTodayStatus();
+        const record = res?.record || res?.data?.record || res?.data?.data?.record;
         if (active && record) {
           setCheckInData(record);
         }
@@ -61,9 +62,10 @@ export default function Header() {
   const handleCheckIn = async () => {
     setCheckLoading(true);
     try {
-      const { data: res } = await attendanceService.checkIn();
-      const record = res?.record || res?.data?.record || res;
+      const res = await attendanceService.checkIn();
+      const record = res?.record || res?.data?.record || res?.data?.data?.record || res;
       setCheckInData(record);
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('Checked in! Have a great day.');
       queryClient.invalidateQueries(['attendance']);
     } catch {
@@ -76,10 +78,11 @@ export default function Header() {
   const handleCheckOut = async () => {
     setCheckLoading(true);
     try {
-      const { data: res } = await attendanceService.checkOut();
-      const record = res?.record || res?.data?.record || res;
+      const res = await attendanceService.checkOut();
+      const record = res?.record || res?.data?.record || res?.data?.data?.record || res;
       setCheckInData(record);
       setElapsed('');
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('Checked out. See you tomorrow!');
       queryClient.invalidateQueries(['attendance']);
     } catch {
@@ -106,7 +109,7 @@ export default function Header() {
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border" style={{ borderColor: 'var(--border-hairline)' }}>
             <BufferAnimation variant="clock-spin" size="sm" caption="" />
           </div>
-        ) : (checkInData && !checkInData.checkOut) ? (
+        ) : checkInData?.checkIn && !checkInData?.checkOut ? (
           <button
             onClick={handleCheckOut}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border transition-all hover:bg-[--bg-canvas]"
@@ -116,6 +119,11 @@ export default function Header() {
             <span className="font-mono text-xs">{elapsed}</span>
             <span>Check Out</span>
           </button>
+        ) : checkInData?.checkOut ? (
+          <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border bg-[--bg-canvas]" style={{ borderColor: 'var(--border-hairline)', color: 'var(--ink-muted)' }}>
+             <CheckCircle size={16} />
+             <span>Checked Out</span>
+          </div>
         ) : (
           <button
             onClick={handleCheckIn}
