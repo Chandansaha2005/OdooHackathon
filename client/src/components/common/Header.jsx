@@ -13,7 +13,6 @@ export default function Header() {
   const { user, isAdmin, signOut } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [dropOpen, setDropOpen] = useState(false);
   const [checkInData, setCheckInData] = useState(null);
   const [checkLoading, setCheckLoading] = useState(false);
